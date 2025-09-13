@@ -342,7 +342,7 @@ async def check_spelling_grammar(file_path: str, message: types.Message):
         
         all_errors = []
         
-        for page_num in range(15):
+        for page_num in range(total_pages):
             page = doc.load_page(page_num)
             text = page.get_text()
             
