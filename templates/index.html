@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Проверка Документа</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <h1>Загрузите PDF или TEX файл для проверки</h1>
+    <form action="{{ url_for('upload_file') }}" method="post" enctype="multipart/form-data">
+        <input type="file" name="document_file" accept=".pdf,.tex" required>
+        <br><br>
+
+        <!-- Выбор модели для GPT -->
+        <label for="gpt_model">Выберите модель GPT:</label>
+        <select name="gpt_model" id="gpt_model" required>
+            <option value="gpt-5">GPT-5</option>
+            <option value="gpt-5-mini" selected>GPT-5-Mini</option>
+            <option value="gpt-5-nano">GPT-5-Nano</option>
+        </select>
+        <br><br>
+
+        <!-- Ввод размера батча для .tex -->
+        <label for="batch_size">Размер батча для .tex файлов (символы):</label>
+        <input type="number" id="batch_size" name="batch_size" value="5000" min="100" max="50000" required>
+        <br><br>
+
+        <label>Выберите тип проверки:</label>
+        <br>
+        <input type="radio" id="check_stoplist" name="check_type" value="check_stoplist" required>
+        <label for="check_stoplist">Проверить по стоп-листу</label>
+        <br>
+        <input type="radio" id="check_spelling" name="check_type" value="check_spelling" required>
+        <label for="check_spelling">Проверить орфографию и грамматику</label>
+        <br><br>
+        <button type="submit">Загрузить и обработать</button>
+    </form>
+
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <ul>
+            {% for message in messages %}
+                <li>{{ message }}</li>
+            {% endfor %}
+            </ul>
+        {% endif %}
+    {% endwith %}
+
+</body>
+</html>

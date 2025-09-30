@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Результаты проверки</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <h1>Результаты проверки</h1>
+
+    {% if check_type == 'check_stoplist' %}
+        <h2>Проверка по стоп-листу</h2>
+        {% if summary %}
+            <p><strong>Тип документа:</strong> {{ summary.doc_type.upper() }}</p>
+            <p><strong>Использованная модель GPT:</strong> {{ summary.gpt_model }}</p> <!-- Добавлено -->
+            <p><strong>Всего обработано: </strong> {{ summary.total_items }} {{ "страниц" if summary.doc_type == 'pdf' else "фрагментов" }}</p>
+            <p><strong>Всего найдено совпадений:</strong> {{ summary.total_found }}</p>
+            <p><strong>Подтвержденных нарушений:</strong> {{ summary.verified }}</p>
+            <p><strong>Неизвестных:</strong> {{ summary.unknown }}</p>
+            <p><strong>Однофамильцев:</strong> {{ summary.namesake }}</p>
+        {% endif %}
+
+        {% if results %}
+            <h3>Все результаты:</h3>
+            {% for item_num, occurrences in results.all.items() %}
+                <h4>{{ "Страница" if summary.doc_type == 'pdf' else "Фрагмент" }} {{ (item_num|int + 1)|string if summary.doc_type == 'pdf' else (item_num)|string }}</h4>
+                {% for occ in occurrences %}
+                    <div class="result-item">
+                        <p><strong>ФИО:</strong> {{ occ.full_name }}</p>
+                        <p><strong>Найдено:</strong> '{{ occ.matched_word }}'</p>
+                        <p><strong>Контекст:</strong> {{ occ.context }}</p>
+                        {% if occ.gpt_result %}
+                            <p><strong>GPT Результат:</strong></p>
+                            <pre>{{ occ.gpt_result.raw_response }}</pre>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            {% endfor %}
+
+            {% if results.verified %}
+                <h3>Подтвержденные:</h3>
+                {% for item_num, occurrences in results.verified.items() %}
+                    <h4>{{ "Стр." if summary.doc_type == 'pdf' else "Фр." }} {{ (item_num|int + 1)|string if summary.doc_type == 'pdf' else (item_num)|string }}</h4>
+                    {% for occ in occurrences %}
+                        <div class="result-item verified">
+                            <p><strong>ФИО:</strong> {{ occ.full_name }}</p>
+                            <p><strong>Контекст:</strong> {{ occ.context }}</p>
+                        </div>
+                    {% endfor %}
+                {% endfor %}
+            {% endif %}
+
+            {% if results.unknown %}
+                <h3>Неизвестные:</h3>
+                {% for item_num, occurrences in results.unknown.items() %}
+                    <h4>{{ "Стр." if summary.doc_type == 'pdf' else "Фр." }} {{ (item_num|int + 1)|string if summary.doc_type == 'pdf' else (item_num)|string }}</h4>
+                    {% for occ in occurrences %}
+                        <div class="result-item unknown">
+                            <p><strong>ФИО:</strong> {{ occ.full_name }}</p>
+                            <p><strong>Контекст:</strong> {{ occ.context }}</p>
+                        </div>
+                    {% endfor %}
+                {% endfor %}
+            {% endif %}
+
+            {% if results.namesake %}
+                <h3>Однофамильцы:</h3>
+                {% for item_num, occurrences in results.namesake.items() %}
+                    <h4>{{ "Стр." if summary.doc_type == 'pdf' else "Фр." }} {{ (item_num|int + 1)|string if summary.doc_type == 'pdf' else (item_num)|string }}</h4>
+                    {% for occ in occurrences %}
+                        <div class="result-item namesake">
+                            <p><strong>ФИО:</strong> {{ occ.full_name }}</p>
+                            <p><strong>Контекст:</strong> {{ occ.context }}</p>
+                        </div>
+                    {% endfor %}
+                {% endfor %}
+            {% endif %}
+        {% endif %}
+
+    {% elif check_type == 'check_spelling' %}
+        <h2>Проверка орфографии и грамматики</h2>
+        {% if spelling_summary %}
+            <p><strong>Тип документа:</strong> {{ spelling_summary.doc_type.upper() }}</p>
+            <p><strong>Использованная модель GPT:</strong> {{ spelling_summary.gpt_model }}</p> <!-- Добавлено -->
+            {% if spelling_summary.doc_type == 'tex' %}
+                <p><strong>Размер батча:</strong> {{ spelling_summary.batch_size }} символов</p> <!-- Добавлено -->
+            {% endif %}
+            <p><strong>Всего обработано: </strong> {{ spelling_summary.total_items }} {{ "страниц" if spelling_summary.doc_type == 'pdf' else "батчей" }}</p>
+            <p><strong>Всего найдено ошибок:</strong> {{ spelling_summary.total_errors }}</p>
+        {% endif %}
+        {% if spelling_errors %}
+            <h3>Ошибки:</h3>
+            {% for error in spelling_errors %}
+                <div class="error-item">
+                    <p><strong>{{ "Стр." if spelling_summary.doc_type == 'pdf' else "Батч" }} {{ (error.batch)|string }}:</strong>
+                     {{ error.type.upper() }} - "{{ error.wrong_word }}" -> "{{ error.correction }}"</p>
+                    <p><em>{{ error.full_context }}</em></p>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endif %}
+
+    <a href="{{ url_for('index') }}">Новый файл</a>
+
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <ul>
+            {% for message in messages %}
+                <li>{{ message }}</li>
+            {% endfor %}
+            </ul>
+        {% endif %}
+    {% endwith %}
+
+</body>
+</html>
